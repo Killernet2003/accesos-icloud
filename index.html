@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Accesos iCloud</title>
+<meta name="description" content="Lanzador de los servicios web de iCloud: Correo, Fotos, Drive, Notas, Recordatorios, Calendario, Contactos y Buscar.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-64.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="iCloud">
+<style>
+  /* Lanzador: rejilla de iconos tipo pantalla de inicio sobre un lienzo neutro cálido-frío */
+  :root{
+    --bg:#f5f5f7; --panel:#ffffff; --fg:#1d1d1f; --muted:#6e6e73;
+    --hair:#e3e3e8; --accent:#0a6cf0; --ring:rgba(10,108,240,.35);
+    --shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.06);
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#000000; --panel:#1c1c1e; --fg:#f5f5f7; --muted:#8e8e93;
+    --hair:#2c2c2e; --accent:#2f9bff; --ring:rgba(47,155,255,.4);
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.5); color-scheme:dark;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#000000; --panel:#1c1c1e; --fg:#f5f5f7; --muted:#8e8e93;
+    --hair:#2c2c2e; --accent:#2f9bff; --ring:rgba(47,155,255,.4);
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.5); color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--fg); font-family:var(--font);
+    -webkit-font-smoothing:antialiased; line-height:1.4;
+    padding-left:max(16px,env(safe-area-inset-left,0px));
+    padding-right:max(16px,env(safe-area-inset-right,0px));
+    padding-block:0;
+  }
+  .wrap{max-width:720px;margin:0 auto}
+  header{padding-block:28px 10px;text-align:center}
+  .brand{display:inline-flex;align-items:center;gap:10px;font-size:1.35rem;font-weight:600;letter-spacing:-.02em}
+  .brand svg{width:30px;height:30px}
+  .sub{color:var(--muted);font-size:.9rem;margin-top:6px}
+  .grid{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px;
+    padding-block:22px;
+  }
+  @media (max-width:380px){.grid{grid-template-columns:repeat(3,1fr)}}
+  .app{
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    text-decoration:none;color:var(--fg);border-radius:16px;padding:6px 2px;
+    outline:none;
+  }
+  .app:focus-visible{box-shadow:0 0 0 3px var(--ring)}
+  .tile{
+    width:60px;height:60px;border-radius:15px;display:grid;place-items:center;
+    box-shadow:var(--shadow);position:relative;overflow:hidden;
+    transition:transform .12s ease;
+  }
+  .app:active .tile{transform:scale(.92)}
+  .tile svg{width:34px;height:34px;display:block}
+  .name{font-size:.78rem;color:var(--fg);text-align:center;letter-spacing:-.01em}
+  /* Fondos de cada icono, inspirados en los colores de las apps de Apple */
+  .t-mail{background:linear-gradient(180deg,#36c3ff,#0a84ff)}
+  .t-photos{background:#ffffff;border:1px solid var(--hair)}
+  .t-drive{background:linear-gradient(180deg,#8fd3ff,#1aa0ff)}
+  .t-notes{background:linear-gradient(180deg,#fff2b0,#ffd60a)}
+  .t-rem{background:#ffffff;border:1px solid var(--hair)}
+  .t-cal{background:#ffffff;border:1px solid var(--hair)}
+  .t-contacts{background:linear-gradient(180deg,#b9c0cc,#8a94a6)}
+  .t-find{background:linear-gradient(180deg,#54d669,#17b534)}
+  .t-iwork{background:linear-gradient(180deg,#ffb24d,#ff8a00)}
+  .t-home{background:linear-gradient(180deg,#3b9eff,#0a6cf0)}
+  .card{
+    background:var(--panel);border:1px solid var(--hair);border-radius:16px;
+    padding:16px 18px;box-shadow:var(--shadow);margin-block:14px 6px;
+  }
+  .card h2{margin:0 0 6px;font-size:.95rem;font-weight:600}
+  .card p{margin:6px 0;color:var(--muted);font-size:.86rem}
+  .card .step{color:var(--fg)}
+  footer{color:var(--muted);font-size:.74rem;text-align:center;padding-block:4px max(30px,env(safe-area-inset-bottom,0px))}
+  .install{display:block;width:100%;margin:12px 0 4px;background:var(--accent);color:#fff;border:0;
+    border-radius:12px;padding:14px 18px;font-size:1rem;font-weight:600;cursor:pointer;font-family:inherit}
+  .install[hidden],.card[hidden],.qr[hidden]{display:none}
+  .install:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring)}
+  .steps{margin:10px 0 0;padding-left:1.3em;font-size:.88rem}
+  .steps li{margin:7px 0;padding-left:2px}
+  .steps:empty{display:none}
+  .k{display:inline-block;border:1px solid var(--hair);border-radius:7px;padding:0 6px;
+    background:var(--bg);font-weight:600;white-space:nowrap}
+  .qr{display:flex;gap:16px;align-items:center;margin-top:12px}
+  .qr-box{flex:none;background:#fff;padding:8px;border-radius:10px;line-height:0}
+  .qr p{margin:0}
+  .done h2{color:var(--fg)}
+  @media (prefers-reduced-motion:reduce){.tile{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 100 70" aria-hidden="true"><path fill="var(--accent)" d="M78 44c0-9-7-16-16-16-1 0-3 0-4 1-3-7-10-12-18-12-11 0-20 9-20 20v1c-7 1-12 7-12 14 0 8 7 15 15 15h52c8 0 15-6 15-14 0-5-3-9-7-12 0 .8 0-1 0 3z"/></svg>
+      Accesos iCloud
+    </div>
+    <div class="sub">Abre cada servicio de iCloud en el navegador. Inicia sesión con tu Apple ID.</div>
+  </header>
+
+
+  <section class="card setup" id="setup" hidden>
+    <h2 id="setup-title">Instálala como app</h2>
+    <p id="setup-lead">Queda un ícono en tu pantalla de inicio. No necesitas tienda de apps ni descargar nada más.</p>
+    <button class="install" id="install" hidden>Instalar en este teléfono</button>
+    <ol class="steps" id="steps"></ol>
+    <div class="qr" id="qr" hidden>
+      <div class="qr-box" id="qr-box" aria-label="Código QR para abrir esta página en el teléfono"></div>
+      <p>Escanéalo con la cámara de tu Android y sigue los pasos en el teléfono.</p>
+    </div>
+  </section>
+
+  <section class="card done" id="done" hidden>
+    <h2>Listo, ya está instalada</h2>
+    <p>Mantén presionado el ícono para abrir directo Correo, Fotos, Drive o Calendario.</p>
+  </section>
+
+  <nav class="grid" id="grid" aria-label="Servicios de iCloud"></nav>
+
+
+
+  <footer>
+    Los enlaces abren iCloud.com en una pestaña nueva. No afiliado a Apple.
+  </footer>
+</div>
+
+<script>
+  // Servicios y sus direcciones web oficiales en iCloud.com
+  const APPS = [
+    ["Correo","https://www.icloud.com/mail","t-mail",
+      '<svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5" width="19" height="14" rx="3" fill="#fff"/><path d="M4 7.5l8 5.5 8-5.5" stroke="#0a84ff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>'],
+    ["Fotos","https://www.icloud.com/photos","t-photos",
+      '<svg viewBox="0 0 24 24"><g><circle cx="12" cy="12" r="3.3" fill="#ffd60a"/><path d="M12 3.3a8.7 8.7 0 013.6 .8l-2.2 4.9A3.3 3.3 0 0012 8.7z" fill="#ff3b30"/><path d="M20.7 12a8.7 8.7 0 01-.8 3.6l-4.9-2.2A3.3 3.3 0 0015.3 12z" fill="#ff9500"/><path d="M12 20.7a8.7 8.7 0 01-3.6-.8l2.2-4.9A3.3 3.3 0 0012 15.3z" fill="#34c759"/><path d="M3.3 12a8.7 8.7 0 01.8-3.6l4.9 2.2A3.3 3.3 0 008.7 12z" fill="#0a84ff"/><path d="M12 3.3V8.7a3.3 3.3 0 00-1.4 .3L8.4 4.1A8.7 8.7 0 0112 3.3z" fill="#ff2d55"/><path d="M20.7 12h-5.4a3.3 3.3 0 00-.3-1.4l4.9-2.2A8.7 8.7 0 0120.7 12z" fill="#ffcc00"/><path d="M12 20.7v-5.4a3.3 3.3 0 001.4-.3l2.2 4.9a8.7 8.7 0 01-3.6 .8z" fill="#30d158"/><path d="M3.3 12h5.4a3.3 3.3 0 00.3 1.4l-4.9 2.2A8.7 8.7 0 013.3 12z" fill="#5856d6"/></g></svg>'],
+    ["Drive","https://www.icloud.com/iclouddrive","t-drive",
+      '<svg viewBox="0 0 24 24"><path d="M17 16a4 4 0 00-.7-7.9A5.5 5.5 0 006 9.2 3.8 3.8 0 007 16z" fill="#fff"/></svg>'],
+    ["Notas","https://www.icloud.com/notes","t-notes",
+      '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2.5" fill="#fff"/><path d="M8 9h8M8 12h8M8 15h5" stroke="#d9a400" stroke-width="1.6" stroke-linecap="round"/></svg>'],
+    ["Recordatorios","https://www.icloud.com/reminders","t-rem",
+      '<svg viewBox="0 0 24 24"><circle cx="7" cy="8" r="2.3" fill="#ff3b30"/><circle cx="7" cy="15" r="2.3" fill="#0a84ff"/><path d="M11.5 8h7M11.5 15h7" stroke="#8e8e93" stroke-width="1.7" stroke-linecap="round"/></svg>'],
+    ["Calendario","https://www.icloud.com/calendar","t-cal",
+      '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2.5" fill="#fff"/><rect x="4" y="5" width="16" height="4.5" rx="2.5" fill="#ff3b30"/><text x="12" y="18" font-size="8" font-family="Arial" font-weight="700" fill="#ff3b30" text-anchor="middle">17</text></svg>'],
+    ["Contactos","https://www.icloud.com/contacts","t-contacts",
+      '<svg viewBox="0 0 24 24"><circle cx="12" cy="9.5" r="3.6" fill="#fff"/><path d="M5.5 19a6.5 6.5 0 0113 0z" fill="#fff"/></svg>'],
+    ["Buscar","https://www.icloud.com/find","t-find",
+      '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12" r="2.6" fill="#fff"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>'],
+    ["iWork","https://www.icloud.com/pages","t-iwork",
+      '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2.5" fill="#fff"/><path d="M8.5 8h7M8.5 11h7M8.5 14h4.5" stroke="#ff8a00" stroke-width="1.6" stroke-linecap="round"/></svg>'],
+    ["iCloud","https://www.icloud.com","t-home",
+      '<svg viewBox="0 0 24 24"><path d="M17 16a4 4 0 00-.7-7.9A5.5 5.5 0 006 9.2 3.8 3.8 0 007 16z" fill="#fff"/></svg>'],
+  ];
+
+  // Atajos del ícono (mantener presionado): ./?abrir=correo abre ese servicio directo
+  const IDS = {correo:0, fotos:1, drive:2, notas:3, recordatorios:4, calendario:5, contactos:6, buscar:7, iwork:8};
+  const abrir = new URLSearchParams(location.search).get('abrir');
+  if (abrir in IDS) location.replace(APPS[IDS[abrir]][1]);
+
+  const grid = document.getElementById('grid');
+  for (const [name, url, cls, svg] of APPS) {
+    const a = document.createElement('a');
+    a.className = 'app'; a.href = url; a.target = '_blank'; a.rel = 'noopener';
+    a.innerHTML = `<span class="tile ${cls}">${svg}</span><span class="name">${name}</span>`;
+    grid.appendChild(a);
+  }
+
+  // Instalación guiada según el dispositivo y el navegador
+  const $ = (id) => document.getElementById(id);
+  const ua = navigator.userAgent;
+  const isAndroid = /Android/i.test(ua);
+  const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isSamsung = /SamsungBrowser/i.test(ua);
+  const isFirefox = /Firefox|FxiOS/i.test(ua);
+  const inApp = /FBAN|FBAV|Instagram|Line\/|WhatsApp|; wv\)/i.test(ua);
+  const installed = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+  const step = (html) => { const li = document.createElement('li'); li.innerHTML = html; $('steps').appendChild(li); };
+
+  function showSetup() {
+    if (installed()) return;
+    $('setup').hidden = false;
+    $('steps').innerHTML = '';
+    if (inApp) {
+      $('setup-lead').textContent = 'Estás dentro de otra app (WhatsApp, Instagram…). Ábrela en el navegador para poder instalarla:';
+      step('Toca el menú <span class="k">⋮</span> de arriba.');
+      step('Elige <b>Abrir en Chrome</b> o <b>Abrir en el navegador</b>.');
+    } else if (isAndroid && isSamsung) {
+      step('Toca el menú <span class="k">≡</span> abajo a la derecha.');
+      step('Elige <b>Añadir página a</b> → <b>Pantalla de inicio</b>.');
+    } else if (isAndroid && isFirefox) {
+      step('Toca el menú <span class="k">⋮</span>.');
+      step('Elige <b>Instalar</b> o <b>Añadir a la pantalla de inicio</b>.');
+    } else if (isAndroid) {
+      step('Toca el menú <span class="k">⋮</span> arriba a la derecha de Chrome.');
+      step('Elige <b>Instalar app</b> (o <b>Agregar a la pantalla principal</b>).');
+      step('Confirma con <b>Instalar</b>.');
+    } else if (isIOS) {
+      step('Abre esta página en <b>Safari</b>.');
+      step('Toca <span class="k">Compartir</span> y elige <b>Agregar a inicio</b>.');
+    } else {
+      $('setup-title').textContent = 'Instálala en tu Android';
+      $('setup-lead').textContent = 'Estás en un computador. Abre esta página en el teléfono:';
+      showQR();
+    }
+  }
+
+  function showQR() {
+    $('qr').hidden = false;
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    s.onload = () => new QRCode($('qr-box'), { text: location.origin + location.pathname, width: 132, height: 132,
+      colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+    s.onerror = () => { $('qr').innerHTML = '<p>Dirección para el teléfono: <b>' + location.host + location.pathname + '</b></p>'; };
+    document.head.appendChild(s);
+  }
+
+  // Chrome/Edge en Android: botón de instalación de un toque
+  let deferred = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); deferred = e;
+    $('install').hidden = false;
+    $('steps').hidden = true;
+    $('setup-lead').textContent = 'Toca el botón y confirma. No necesitas tienda de apps ni descargar nada más.';
+  });
+  $('install').addEventListener('click', async () => {
+    if (!deferred) return;
+    deferred.prompt();
+    const { outcome } = await deferred.userChoice;
+    deferred = null;
+    if (outcome !== 'accepted') { $('install').hidden = true; $('steps').hidden = false; }
+  });
+  window.addEventListener('appinstalled', () => {
+    $('setup').hidden = true; $('done').hidden = false; deferred = null;
+  });
+  showSetup();
+
+  // Service worker para que el lanzador abra sin conexión
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
+</script>
+</body>
+</html>
