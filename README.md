@@ -4,7 +4,7 @@ Una app web instalable (PWA) que funciona como una pantalla de inicio con los se
 **iCloud.com**: Correo, Fotos, Drive, Notas, Recordatorios, Calendario, Contactos, Buscar e iWork.
 Cada ícono abre el servicio en el navegador; inicias sesión con tu Apple ID la primera vez.
 
-Es el complemento de la app nativa **iClonud** (CalDAV/CardDAV/IMAP): cubre justo lo que Apple
+Es el complemento de la app nativa **[iClonud](https://killernet2003.github.io/iclonud/)** (CalDAV/CardDAV/IMAP): cubre justo lo que Apple
 no expone por protocolos abiertos (Fotos, Drive, Notas, Recordatorios y Buscar), usando su web.
 
 ## Archivos
